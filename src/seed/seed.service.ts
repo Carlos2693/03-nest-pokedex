@@ -17,14 +17,45 @@ export class SeedService {
   ) {}
 
   async executeSeed() {
+
+    await this.pokemonModel.deleteMany({}) // delete * from pokemons;
+
     const { data } = await this.axios.get<PokeResponse>('https://pokeapi.co/api/v2/pokemon?limit=10')
 
-    data.results.forEach(async({name, url}) => {
+    const pokemonToInsert: { name: string, no: number }[] = []
+
+    data.results.forEach(({name, url}) => {
       const segments = url.split('/')
       const no: number = +segments[segments.length - 2]
 
-      const pokemon = await this.pokemonModel.create( {name, no} )
+      // const pokemon = await this.pokemonModel.create( {name, no} )
+      pokemonToInsert.push({name, no}) // [{ name: bulbasur, no: 1 }]
     })
+
+    await this.pokemonModel.insertMany(pokemonToInsert)
+
+    return 'Seed Executed'
+  }
+
+  async executeSeed1() {
+
+    await this.pokemonModel.deleteMany({}) // delete * from pokemons;
+
+    const { data } = await this.axios.get<PokeResponse>('https://pokeapi.co/api/v2/pokemon?limit=10')
+
+    const insertPromisesArray = []
+
+    data.results.forEach(({name, url}) => {
+      const segments = url.split('/')
+      const no: number = +segments[segments.length - 2]
+
+      // const pokemon = await this.pokemonModel.create( {name, no} )
+      insertPromisesArray.push(
+        this.pokemonModel.create({name, no})
+      )
+    })
+
+    await Promise.all(insertPromisesArray)
 
     return 'Seed Executed'
   }
